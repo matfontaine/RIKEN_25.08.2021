@@ -1,0 +1,1078 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Seminar Kyoto University 2021</title>
+
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/riken.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/github.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+				<section class="cover" data-background="figures/background-blur.jpg"  data-state="no-title-footer no-progressbar has-dark-background">
+
+					<h2 id='coverh2'>Fast Multichannel Nonnegative Matrix Factorization Based on Gaussian Scale Mixture
+                           Representation for Blind Source Separation</h2>
+					<h1  id='title_seminar'>Télécom Paris - ADASP Seminar</h1>
+					<h3><a href="https://matfontaine.github.io", id='github_url'>matfontaine.github.io</a></h3>
+					<p id='coverauthors'>
+						Mathieu FONTAINE<br />
+						mathieu.fontaine@riken.jp
+					</p>
+					<p id="date">
+					April 2th, 2021
+					</p>
+					<img src="css/theme/img/inria-cover.svg" id="riken" class="logo" alt="">
+					<img src="figures/kyoto.jpg" class="partners" id="kyoto" alt="">
+
+
+					<aside class="notes">
+						<ul><li>Deal with audio source separation</li>
+						<li>For me, it is in the context of heavy tailed distributions</li>
+					</ul>
+					</aside>
+				</section>
+
+				<!-- Outline of the presentation -->
+				<section>
+					<h2>Outline</h2>
+						<h3> I - FastMNMF for Multichannel Blind Speech Separation $\color{black}\text{[Sek. 20]}$</h3>
+						<h3> II - Gaussian Scale Mixture</h3>
+						<h3> III - Parameter estimation : Application to GH-FastMNMF and $\beta$-FastMNMF</h3>
+						<h3> IV - Speech Enhancement and Speaker Separation Experiments</h3>
+						<h3> V - Conclusion and Future Works </h3>
+						<div class="references" style="float:left;">
+							<ul><li>Sekiguchi, K. et al. (2020, TASLP). FastMNMF with Directivity-Aware Jointly-Diagonalizable Spatial Covariance Matrices
+							for Blind Source Separation</li></ul>
+						</div>
+
+				</section>
+				<!-- Introduction -->
+				<section class="cover" data-background="figures/background.jpg" data-state="no-title-footer no-progressbar has-dark-background">
+					<h2 id='coverh2'>I: FastMNMF for Multichannel Blind Speech Separation</h2>
+				</section>
+
+				<section>
+					<h1>Multichannel Blind Speech Separation?</h1>
+					<aside class="notes">
+						<ul><li>Explain a bit the MBSS and the goal of it</li></ul>
+					</aside>
+
+					<img src="figures/MBSS_goal.png" width="85%" style="margin-left:0em; margin-top:0em;"></br>
+			 <p>In the <span style="font-weight:bold;">Short-time Fourier transform</span> (STFT) domain with $\bold{x}_{ft} \in \mathbb{C}^{M}$:
+				 $$
+				 \underbrace{\vphantom{\sum_{n=1}^{N-1} \bold{x}_{nft}}\bold{x}_{ft}}_{\text{observation}} = \underbrace{\sum_{n=1}^{N-1} \bold{x}_{nft}}_{\text{speakers}} + \underbrace{\vphantom{\sum_{n=1}^{N-1} \bold{x}_{nft}}\bold{x}_{Nft}}_{\text{noise}}
+				 $$
+			 </p>
+			 <span style="margin-top:-6.0em; float:right;">
+			$\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad M\text{: number of channels}$
+			$\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad F\text{ : number of frequency bins}$
+			$\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad T\text{ : number of time frames}$<br>
+			$\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad N\text{: number of sources}$</span>
+				</section>
+
+
+	<section>
+	<h1>Spatial Gaussian Model + MNMF</h1>
+ 	<img src="figures/LGM.png" alt="" style="margin-left:auto; margin-right:auto; display:block" width=60%>
+	<img src="figures/MNMF.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=70%>
+
+	<aside class="notes">
+		<ul>
+			<li>Local Gaussian Model is the most famous one that admits the reproductive property</li>
+			<li>NMF is a dictionnary that decomposes the power spectrogram</li></ul>
+	</aside>
+<div class="references" style="float:left;">
+	<ul><li>Duong, N. et al. (2009, TASLP). Under-determined reverberant audio source separation using a full-rank spatial covariance model.</li></ul>
+</div>
+</section>
+
+<section>
+	<h1>Fast Gaussian MNMF Models</h1>
+	<h2>Independent Low-Rank Matrix Analysis (ILRMA) ${\color{black}\text{[Kit. 18}]}$ </h2>
+	<ul>
+		<li>$\bold{x}_{nft} = \bold{a}_{nf}s_{nft} \quad\quad\quad\quad\quad\quad\quad\quad\quad\quad \text{(Direct sound propagation model)}$</li>
+		<li> Then $\bold{x}_{nft} \sim \mathcal{N}_{\mathbb{C}}\left({\color{green}\lambda_{nft}}\bold{a}_{nf}\left(\bold{a}_{nf}\right)^{\mathrm{H}}\right)\quad\quad ~~\text{(Rank-1 SCM model)}$</li>
+		<li> MNMF model for ${\color{green}\lambda_{nft}}$ parameters</li>
+	</ul>
+	<h2>Fast MNMF 2: a joint diagonalization (JD) technique${\color{black}\text{ [Sek. 19, 20]}}$</h2>
+	<ul>
+		<li>$\bold{x}_{nft} \sim \mathcal{N}_{\mathbb{C}}\left({\color{green}\lambda_{nft}}\underbrace{\bold{Q}_f^{-1}\mathrm{Diag}(\tilde{\bold{g}}_{n})\bold{Q}_f^{-\mathrm{H}}}_{\color{blue}=\bold{G}_{nf}}\right)\text{(JD - FastMNMF2)}$</li>
+		<li> MNMF model for ${\color{green}\lambda_{nft}}$ parameters</li>
+		<li>ILRMA $\subset$ FastMNMF2
+	</ul>
+
+	<aside class="notes">
+		<ul>
+			<li>Fast in the sense reduce the number of parameters to estimate</li>
+			<li>preserve a good performance or improve it</li>
+			<li>interpretation of FastMNMF2: columns of Q are steering vectors as demixing vector of ILRMA and $g_{nm}$ are weights of rank-1 SCM of the $m^{th}$ direction of source n</li></ul>
+	</aside>
+	<div class="references" style="float:left;">
+	<ul><li>Kitamura, D. et al. (2018, Audio Source Separation, Springer). Determined blind source separation with independent low-rank matrix analysis.</li>
+			<li>Sekiguchi, K. et al. (2020, TASLP) FastMNMF with Directivity-Aware Jointly-Diagonalizable Spatial Covariance Matrices
+for Blind Source Separation</li>
+	</ul>
+	</div>
+</section>
+
+<section>
+	<h1 style="margin-top:-1em">FastMNMF2 Optimization</h1>
+	<h2>Multiplicative update strategy </h2>
+	<ul>
+		<li> Expectation-Maximization approach$\implies$minimization of the log-likelihood</li>
+		<li>$w_{nfk}\leftarrow w_{nfk}\sqrt{\frac{\sum_{t, m=1}^{T, M} h_{nkt}
+			\tilde{g}_{nm} \tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+			{\sum_{t, m=1}^{T, M} h_{nkt} \tilde{g}_{nm} \tilde{y}_{ftm}^{-1}}}; ~~
+			h_{nkt}\leftarrow h_{nkt}\sqrt{\frac{\sum_{f, m=1}^{F, M} w_{nfk}
+			 \tilde{g}_{nm} \tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+			 {\sum_{f, m=1}^{F, M} w_{nfk} \tilde{g}_{nm} \tilde{y}_{ftm}^{-1}}};
+			 $</li></br>
+		<li>
+			$\tilde{g}_{nm}\leftarrow \tilde{g}_{nm}\sqrt{\frac{\sum_{f, t, m=1}^{F, T, M} \lambda_{nft}
+		\tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+			{\sum_{f, t, m=1}^{F, T, M} \lambda_{nft}\tilde{y}_{ftm}^{-1}}}\quad\quad$ where $\tilde{\bold{g}}_{n} = \left[\tilde{g}_{n1},\dots,\tilde{g}_{nm}\right]^{\top}$
+		</li>
+		<li>
+			$\tilde{x}_{ftm} = \left|\bold{q}_{fm}^{\mathrm{H}}\bold{x}_{ft}\right|, \tilde{y}_{ftm} = \sum_{n=1}^{N}\lambda_{nft}\tilde{g}_{nm}$
+		</li>
+	</ul>
+		<h2>Iterative projection method ${\color{black}\text{[Ono 11]}}$</h2>
+		<ul>
+			<li>
+		$\bold{q}_{fm}\leftarrow(\bold{Q}_f \bold{V}_{fm})^{-1}\bold{e}_m;\quad
+		\bold{q}_{fm}\leftarrow(\bold{q}_{fm}^{\mathrm{H}}\bold{V}_{fm}\bold{q}_{fm})^{-\frac{1}{2}}\bold{q}_{fm}$
+	</li></br>
+ $\bold{V}_{fm} = \frac{1}{T}\sum_{t=1}^{T}\bold{x}_{ft}\bold{x}_{ft}^{\mathrm{H}} y_{ftm}^{-1}$</br>
+ $\bold{e}_m = \left[\delta_{1,m}\dots,\delta_{M,m}\right]^{\top}$ with $\delta_{m,m^{\prime}}=\begin{cases}1 & \text{if } m=m^{\prime}\\
+		0 & \text{otherwise}\end{cases}$
+	</ul>
+
+	<aside class="notes">
+		<ul>
+			<li>find a lower-bound of the log-likelihood</li>
+			<li>equivalent to minimize the IS divergence</li>
+			<li>non-increase cost function guarantee</li>
+    </ul>
+	</aside>
+
+	<div class="references" style="float:left; margin-top:0.1em">
+	<ul><li>Ono, N. (2011, WASPAA). Stable and fast update rules for independent vector analysis based on auxiliary function technique</li>
+
+	</ul>
+	</div>
+	</section>
+
+	<!-- alpha-stable Theory -->
+	<section class="cover" data-background="figures/background.jpg" data-state="no-title-footer no-progressbar has-dark-background">
+		<h2 id='coverh2'>II: Gaussian Scalar Mixture</h2>
+
+		<aside class="notes">
+			<ul>
+				<li>All the distributions that can be informaly expressed as a Gaussian</li>
+			</ul>
+		</aside>
+	</section>
+
+	<section>
+	<h1>Drawbacks of Gaussian MNMF Models</h1>
+	<ul>
+	 <li>The MNMF initialization is sometimes tricky${ \color{black}\text{[Bou. 08]}}$</li>
+	 <li>Light tails $\implies$ less robust against impulsive noise or uncommon scenario</li>
+ </ul>
+ <img src="figures/tails.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=60%>
+ <div class="remark" style="margin-top:0.8em">
+ In $\text{[Sim. 19]}$, suggest to use heavy-tailed models for gradient descent algorithm
+ </div>
+
+<aside class="notes">
+ <ul>
+	 <li>heavy-tailed means that asymptotically, the tail of the pdf. are lower than the one of the exponential distribution</li>
+	 	 <li>MNMF </li>
+ </ul>
+</aside>
+ <div class="references" style="float:left; margin-top:0.8em">
+ <ul><li>Boutsidis C. (2008, Pattern Recognition). SVD based initialization: A head start for nonnegative matrix factorization</li>
+<li>Simsekli U. (2019, Deep AI). A Tail-Index Analysis of Stochastic Gradient Noise in Deep Neural Networks</li>
+ </ul>
+ </div>
+	</section>
+
+	<section>
+		<h1>Gaussian Scalar Mixture (GSM) Distribution</h1>
+		<ul>
+			<li>Gaussian where the covariance is randomly perturbed</li>
+      <br>
+			<li> If $\bold{u}$ is a GSM, then its PDF. is </li>
+
+		</ul>
+		<center>$
+			p\left(\bold{u}\right)=\int_{0}^{\infty}p\left(\bold{u}\mid{\color{red}\phi}\right)p\left({\color{red}\phi}\right)d{\color{red}\phi}
+			$</center>
+			with<br>
+			<center>$\bold{u}\mid{\color{red}\phi} \sim \mathcal{N}_{\mathbb{C}}\left(\bold{0}, {\color{red}\phi}\bold{A}\right)$</center>
+ <img src="figures/GSM.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=70%>
+	</section>
+
+	<section>
+	<h1>Examples of Gaussian Scale Mixture (1/3)</h1>
+	<h2>(Symmetric Isotropic) Generalized Hyperbolic (GH)  distribution</h2>
+	<ul><li>$\phi$ is known: inverse Gaussian distribution</li>
+	<li>The PDF of $\bold{u}$ is given by:</li>
+	</ul>
+<center>	$p(\mathbf{u})=C_{\eta,\alpha,\delta,\bold{A}}\left(\frac{2\mathbf{u}^{\mathrm{H}}\boldsymbol{A}^{-1}\mathbf{u}+ \delta^{2}}{\alpha^{2}}\right)^{\frac{\eta-M}{2}}\mathcal{K}_{\eta-M}\left(\alpha\sqrt{2\mathbf{u}^{\mathrm{H}}\boldsymbol{A}^{-1}\mathbf{u}+\delta^{2}}\right)$</center>
+	<ul>
+	<li> $\eta, \alpha$: controls the heaviness of the tails </li>
+	<li> $\delta, \bold{A}$: shape ("scale") parameter and covariance matrix </li>
+	<li> $e.g.$ Student $t$ $(\eta=\frac{-\nu}{2}, \alpha=0, \delta=\sqrt{\nu})$, Gaussian, Normal-Inverse Gaussian (NIG) $(\eta=-0.5, \alpha>0, \delta>0)$ are GH </li>
+	 <img src="figures/GH_pdf.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=82%>
+</ul>
+
+		 <aside class="notes">
+		  <ul>
+		 	<li>rotationnaly invariant</li>
+		 	<li>fractional order moment but not convergence guarantee in general</li>
+		 	<li>dependence means in this case that the phase information is more preserved</li>
+		 </aside>
+	</section>
+
+	<section>
+	<h1>Examples of Gaussian Scale Mixture (2/3)</h1>
+	<h2>(Symmetric) Generalized Super-Gaussian Distribution</h2>
+  <ul>
+		<li>for $0<\beta\leq 2$, GSM. But <span style="color:red;">$\phi$ is unknown !</span> (except for $\beta=1, \beta=2$)</li>
+		<li> The PDF of $\bold{u}$ is given by:</li>
+	</ul>
+			<center>
+				$p\left(\mathbf{u}\right)=C_{\beta,\mathbf{A}}\exp\left(-\left[\mathbf{u}^{\mathrm{H}}\mathbf{A}^{-1}\mathbf{u}\right]^{\frac{\beta}{2}}\right)$
+			</center>
+	<ul>
+	<li>
+	$\beta$: shape parameter controling the tail-index
+	</li>
+	<li>
+	$\bold{A}$: shape matrix
+	</li>
+	</ul>
+	 <img src="figures/pdf_GGD.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=38%>
+
+
+
+		<aside class="notes">
+		 <ul>
+		 <li>extension of the conditional Gaussian model in multivariate case</li>
+		 <li>However the isotropy for each component is not preserved (Except for a specific sub-family that is out of scope here)</li>
+		 <li>we see less concentration around the mean $0$ for the $\alpha-$stable case</li>
+		</aside>
+	</section>
+
+	<section>
+	<h1>Examples of Gaussian Scale Mixture (3/3)</h1>
+	<h2>(Symmetric) Elliptically contoured $\alpha$-stable Distribution</h2>
+  <ul>
+		<li>$0<\alpha\leq 2$: characteristic exponent</li>
+		 <li>$\phi$ is known as positive $\alpha$-stable distribution but the PDF <span style="color:red;"> is unknown !</span></li>
+		<li> The PDF of $\bold{u}$ for $\alpha \notin \{0.5,1,2\}$ <span style="color:red;"> is unknown !</span> </li>
+	</ul>
+
+		<aside class="notes">
+		 <ul>
+		 <li>extension of the conditional Gaussian model in multivariate case</li>
+		 <li>However the isotropy for each component is not preserved (Except for a specific sub-family that is out of scope here)</li>
+		 <li>we see less concentration around the mean $0$ for the $\alpha-$stable case</li>
+		</aside>
+		<video style="margin-top:1.7em; margin-bottom:1em;", data-autoplay src="multimedia/videos/gaussian.mp4", width="100%">
+		</video>
+		<div class="references" style="float:left; margin-top:0.1em">
+		<ul><li>M. Fontaine, K. Sekiguchi, A.A. Nugraha and K. Yoshii. Unsupervised Robust Speech Enhancement Based on Alpha-Stable Fast Multichannel Nonnegative Matrix Factorization. INTERSPEECH, 2020.</li>
+
+		</ul>
+		</div>
+	</section>
+
+ <section>
+	<h1>A plethora of FastMNMF variants</h1>
+	<div class="multiCol" style="margin-top:-0.8em">
+		<div class="col">
+	 <img src="figures/GSM_family.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=100%>
+ 	 </div>
+
+	 <div class="col">
+		  <img src="figures/table_GSM.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:0.8em" width=100%>
+	</div>
+	</div>
+ <div class="remark" style="margin-top:0.8em">
+	How to derive a parameter technique that unify all FastMNMF versions ?
+ </div>
+
+</section>
+	<!-- alpha-FastMNMF-->
+	<section class="cover" data-background="figures/background.jpg" data-state="no-title-footer no-progressbar has-dark-background">
+		<h2 id='coverh2'>III: Parameter Estimation : application to GH-FastMNMF and $\beta$-FastMNMF</h2>
+	</section>
+
+	<section>
+		<h1>Probabilistic Model</h1>
+    <ul>
+			<li>We assume a GSM model on sources:</li>
+		</ul>
+		<center>
+			<br>
+				$\forall n, \mathbf{x}_{nft} \mid {\color{red} \phi_{ft}} \sim \mathcal{N}_{\mathbb{C}}\left(\mathbf{0}, {\color{red} \phi_{ft}}\lambda_{nft}\mathbf{G}_{nft}\right)$
+</center><br>
+		<ul>
+		<li>The covariance perturbation ${\color{red} \phi_{ft}}$ is the same for all sources</li>
+		<li>The mixing model becomes:</li>
+		</ul>
+		<center>
+			<br>
+		$\mathbf{x}_{ft} \mid {\color{red} \phi_{ft}} \sim \mathcal{N}_{\mathbb{C}}\left(\mathbf{0},{\color{red} \phi_{ft}}\sum_{n=1}^{N}\lambda_{nft}\mathbf{G}_{nft}\right)$
+<br>
+	</center>
+		<aside class="notes">
+		 <ul>
+		 <li>The linear stability of laws is preserved but not linearity of parameters for vector case</li>
+		 <li>use the conditional Gaussianity as an alternative representation</li>
+		</aside>
+	</section>
+
+	<section>
+		<h1>GSM FastMNMF + Filtering Method </h1>
+
+		<h2> Weighted-shared JD model</h2>
+		<ul>
+			<li>$\bold{Y}_{ft} = \bold{Q}_f^{-1}\left({\color{red}\phi_{ft}}\underbrace{\sum_{n=1}^{N}\underbrace{{\color{green}\lambda_{nft}}\mathrm{Diag}\left(\bold{\tilde{g}}_{n}\right)}_{=\mathrm{Diag}\left(\tilde{\bold{y}}_{nft}\right)}}_{=\mathrm{Diag}\left(\tilde{\bold{y}}_{ft}\right)} \right)\bold{Q}_{f}^{-\mathrm{H}}$</li>
+		<li>$\bold{x}_{ft} \mid \bold{\Phi} \sim \mathcal{N}_{\mathbb{C}}\left(\bold{0}, \bold{Y}_{ft}\right)$</li>
+   <li>MNMF model for ${\color{green}\lambda_{nft}}$ parameters</li>
+		</ul>
+		<h2>Marginalized Wiener filter</h2>
+		<ul><li>Using the conditional Gaussian model we have:</li>
+		$$
+		\mathbb{E}_{\bm\phi}\left[
+		\mathbb{E}\left[
+		 \mathbf{x}_{nft}\mid\mathbf{\Theta}, \bm{\phi}, \mathbf{x}_{ft}\right]\right]
+		 = \mathbf{Q}_{f}^{-1}
+    \mathrm{Diag} \left( \tilde{\mathbf{y}}_{nft} \right)
+    \mathrm{Diag} \left( \tilde{\mathbf{y}}_{ft} \right)^{-1}\mathbf{Q}_{f}^{-\mathrm{H}}
+    \mathbf{x}_{ft}.
+		$$
+		<li>Where $\mathbf{\Theta}=\left\{\bold{W}, \bold{H}, \tilde{\bold{G}}, \bold{Q}\right\}$</li>
+		<div class="remark" style="margin-top:0.8em">
+	 	The filtering technique is equivalent to the classical Multichannel Wiener filter
+	  </div>
+		<aside class="notes">
+		 <ul>
+		 <li>The difference is only that $\phi$ are included</li>
+		 <li>and the marginalized Wiener filter induces by the conditional Gaussian model where the expectation is along the posterior distribution $\phi \mid X, \Theta$</li>
+		</aside>
+	</section>
+
+ <section>
+	 <h1>Lower-bound</h1>
+	 We develop a Majorization-Minimization algorithm for the parameter estimation
+	 <ul>
+	<li>Consider the LL: $\log p(\bold{X} |\bm{\Theta}) = \log \int p(\bold{X} |\bm{\Theta}, \bm\phi) p(\bm\phi) d\bm\phi$</li>
+	<li>Using the fact that $\bold{X}$ is a GSM, we get:</li>
+</ul></br></br>
+
+<center>
+	$\log p(\bold{X} |\bm{\Theta})\overset{c}{\geq}\sum_{n,f,t,k,m=1}^{N,F,T,K,M}\left(-\omega_{ftm}^{-1}\tilde{g}_{nm}w_{nkf}h_{nkt}
+	+\tilde{x}_{ftm}\pi_{nkftm}^{2}\tilde{g}_{nm}^{-1}w_{nkf}^{-1}h_{nkt}^{-1}\mathbb{E}_{q\left(\theta\right)}\left[\phi_{ft}^{-1}\right]\right)$
+	 $-T\sum_{f=1}^{F}\log\left|\bold{Q}_{f}\bold{Q}_{f}^{\mathrm{H}}\right| -\mathrm{KL}\left[q\left(\phi_{ft}\right)\mid\mid p\left(\phi_{ft}\right)\right]$
+</center>
+
+
+<ul>
+<li> $\text{KL}$ denotes the Kullback-Leibler divergence</li>
+<li>$\tilde{x}_{ftm} = \left|\bold{q}_{fm}^{\mathrm{H}}\bold{x}_{ft}\right|$</li>
+<li>$\omega_{ftm}, \pi_{nkftm}$ are auxiliary variables (depends on $\Theta$ to satisify the equality)</li>
+<li>$q\left(\theta\right)$ satisfy the equality with the LL when $ q(\theta) = p\left(\phi \mid \bold{X}, \bold{\Theta}\right)$</li>
+</ul>
+<div class="remark" style="margin-top:0.8em">
+How to compute $\mathbb{E}_{q\left(\theta\right)}\left[\phi_{ft}^{-1}\right]$ ?
+</div>
+
+<aside class="notes">
+ <ul>
+ <li>Variational inference procedure</li>
+</aside>
+
+ </section>
+ <section>
+ <h1>E-Step: computation of $\mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]$ </h1>
+	Thanks to the GSM assumption, it can be shown that:
+
+	<center>
+		<br>
+	$
+	\frac{d\log p\left(\bold{x}_{ft}\right)}{d\bold{x}_{ft}^{\mathrm{H}}}
+=-\sum_{m=1}^{M}2\bold{q}_{fm}^{\mathrm{H}}\bold{x}_{ft}\bold{q}_{fm}\tilde{y}_{ftm}^{-1}\mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]
+	$
+</center>
+<br>
+<ul>
+	<li>$\tilde{y}_{ftm} = \sum_{n,k=1}^{N,K}\tilde{g}_{nm}w_{nfk}h_{nkt}$</li>
+	<li>Only the knowledge of the log PDF is required</li>
+	<li> The knowledge of the law of $\phi_{ft}$ is not necessary !</li>
+</ul>
+ <aside class="notes">
+	<ul>
+	<li>the acceptance probability forms is due to the independence of phi with the source</li>
+	<li>is a generalization of Gaussian FastMNMF</li>
+ </aside>
+ </section>
+ <section>
+	 <h1>M-Step</h1>
+	 <h2>Multiplicative update rules (MUR)</h2>
+	 <ul>
+		 <li> Let assume that ${\color{red}\tilde{\phi}_{ft}^{-1}} \triangleq \mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]$ are known
+		 <li>As in FastMNMF, the MURs are given as the Itakura-Saito (IS) minimization:</li>
+ 		<!-- <li> Minimization-Maximization approach$\implies$minimization of the log-likelihood</li> -->
+ 		<li>$w_{nfk}\leftarrow w_{nfk}\sqrt{\frac{\sum_{t, m=1}^{T, M} {\color{red}\tilde{\phi}_{ft}^{-1}}h_{nkt}
+ 			\tilde{g}_{nm} \tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+ 			{\sum_{t, m=1}^{T, M} {\color{red}\tilde{\phi}_{ft}^{-1}}h_{nkt} \tilde{g}_{nm} \tilde{y}_{ftm}^{-1}}};
+h_{nkt}\leftarrow h_{nkt}\sqrt{\frac{\sum_{f, m=1}^{F, M} {\color{red}\tilde{\phi}_{ft}^{-1}}w_{nfk}
+ 			 \tilde{g}_{nm} \tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+ 			 {\sum_{f, m=1}^{F, M} {\color{red}\tilde{\phi}_{ft}^{-1}}w_{nfk} \tilde{g}_{nm} \tilde{y}_{ftm}^{-1}}};
+ 			 $</li></br>
+ 		<li>
+ 			$\tilde{g}_{nm}\leftarrow \tilde{g}_{nm}\sqrt{\frac{\sum_{f, t, m=1}^{F, T, M} {\color{red}\tilde{\phi}_{ft}^{-1}}\lambda_{nft}
+ 		\tilde{x}_{ftm}\tilde{y}_{ftm}^{-2}}
+ 			{\sum_{f, t, m=1}^{F, T, M} {\color{red}\tilde{\phi}_{ft}^{-1}}\lambda_{nft}\tilde{y}_{ftm}^{-1}}}\quad\quad$ where $\tilde{\bold{g}}_{n} = \left[\tilde{g}_{n1},\dots,\tilde{g}_{nm}\right]^{\top}$
+ 		</li>
+ 	</ul>
+ 		<h2>Iterative projection method</h2>
+ 		<ul>
+ 			<li>
+ 		$\bold{q}_{fm}\leftarrow(\bold{Q}_f \bold{V}_{fm})^{-1}\bold{e}_m;\quad
+ 		\bold{q}_{fm}\leftarrow(\bold{q}_{fm}^{\mathrm{H}}\bold{V}_{fm}\bold{q}_{fm})^{-\frac{1}{2}}\bold{q}_{fm}$
+ 	</li></br>
+  $\bold{V}_{fm} = \frac{1}{T}\sum_{t=1}^{T}{\color{red}\tilde{\phi}_{ft}^{-1}} \bold{x}_{ft}\bold{x}_{ft}^{\mathrm{H}} y_{ftm}^{-1}$</br>
+  $\bold{e}_m = \left[\delta_{1,m}\dots,\delta_{M,m}\right]^{\top}$ with $\delta_{m,m^{\prime}}=\begin{cases}1 & \text{if } m=m^{\prime}\\
+ 		0 & \text{otherwise}\end{cases}$
+ 	</ul>
+	<aside class="notes">
+	 <ul>
+	 <li>in the gaussian case, all $\phi_{ft}$ becomes determinate and equals to one</li>
+	 <li>is a generalization of Gaussian FastMNMF</li>
+	</aside>
+ </section>
+ <section>
+	 <h1>E-Step for GH-FastMNMF and $\beta$-FastMNMF</h1>
+	 We apply the following formula in the case of a GH model and a $\beta$-FastMNMF:
+	 <center>
+ 		<br>
+ 	$
+ 	\frac{d\log p\left(\bold{x}_{ft}\right)}{d\bold{x}_{ft}^{\mathrm{H}}}
+ =-\sum_{m=1}^{M}2\bold{q}_{fm}^{\mathrm{H}}\bold{x}_{ft}\bold{q}_{fm}\tilde{y}_{ftm}^{-1}\mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]
+ 	$
+ </center>
+ <h2>GH-FastMNMF</h2>
+ We get the following result for ${\color{red}\tilde{\phi}_{ft}^{-1}} \triangleq \mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]$:
+ <center>
+${\color{red}\tilde{\phi}_{ft}^{-1}}=\left(\frac{2\left(M-\eta\right)}{\gamma_{ft}}+\alpha\frac{\mathcal{K}_{\eta-M+1}\left(\alpha^{2}\gamma_{ft}\right)}{\gamma_{ft}\mathcal{K}_{\eta-M}\left(\alpha^{2}\gamma_{ft}\right)}\right)$
+</center>
+where $\gamma_{ft} \triangleq 1 + \frac{2}{\delta^{2}}\sum_{m}\tilde{x}_{ftm}\tilde{y}_{ftm}^{-1}$
+<ul>
+<li>The results coincide with the already proposed $\nu$-FastMNMF and $\mathcal{N}$-FastMNMF</li>
+</ul>
+<h2> $\beta$-FastMNMF</h2>
+ We get the following result for ${\color{red}\tilde{\phi}_{ft}^{-1}} \triangleq \mathbb{E}_{p\left(\phi \mid \bold{X}, \bold{\Theta}\right)}\left[\phi_{ft}^{-1}\right]$:
+ <center>
+	${\color{red}\tilde{\phi}_{ft}^{-1}} =\frac{\beta}{2}\left(\sum_{m=1}^{M}\tilde{x}_{ftm}y_{ftm}^{-1}\right)^{\frac{\beta-2}{2}}$
+</center>
+</section>
+ <!-- Evaluation -->
+ <section class="cover" data-background="figures/background.jpg" data-state="no-title-footer no-progressbar has-dark-background">
+	 <h2 id='coverh2'>IV: Speech Enhancement and Speaker Separation results</h2>
+ </section>
+
+ <section>
+ 	<h1>Setting for Speech Enhancement</h1>
+	<h2>Dataset description</h2>
+ 	<ul>
+ 	<li>REVERB CHALLENGE dataset sampled at $16~$kHz recorded with $8$ microphones</li>
+	<li>RT$_{60}$ are either 0.25, 0.5 or 0.7s</li>
+ 	<li>3 Signal to noise ratio level: $0, 5, 10$ dB</li>
+	<li>$2$ distances: "near" (50cm between mic and speaker) & "far" ( $\simeq$ 2m)</li>
+	<li>$M \in \left\{2, 5, 8\right\}$ are considered with $N=M$ (to include ILRMA)</li>
+	<li>$100$ utterances for the first experiment (dev set)</li>
+		<li>$200$ utterances for the second experiment (test set)</li>
+	<h2>Scores</h2>
+	<li>Signal to Distorsion Ratio (SDR), Perceptual Evaluation of Speech Quality (PESQ)<b>(higher is better)</b></li>
+		</ul>
+ </section>
+
+ <section>
+	<h1 style = "margin-top:-1em;">Baseline Methods and Configuration</h1>
+	<h2>Methods</h2>
+	<ul>
+		<li><b>$\mathcal{N},\nu$-FastMNMF</b>: Gaussian and Student $t$ weighted-shared JD SCM decomposition + MNMF</li>
+		<li><b>$\mathcal{N},\beta,\nu$-ILRMA</b>: Gaussian, Super-Gaussian and Student $t$ rank $1$ constrained SCM + direct sound propagation model + MNMF
+		<li><b>NIG-FastMNMF</b>: proposed method with hyperparameters $(\alpha, \delta)$</li>
+		<li><b>$\beta$-FastMNMF</b>: proposed Super Gaussian FastMNMF with $0<\beta\leq2$</li>
+	</ul>
+	<h2>Settings</h2>
+	<ul>
+	<li>$300$ iterations for the EM algorithm is considered</li>
+<li>NMF coefficients are randomly initialized</li>
+	<li> Demixing matrix in ILRMA and $\bold{Q}_{f}$ are initialized as identity matrix $\forall f$</li>
+<li>The Matrix $\left[\tilde{\bold{g}}_{1}, \dots, \tilde{\bold{g}}_{N}\right]^{\top} \in \mathbb{R}^{N\times M}$ is initialized as the  circulant matrix</li>
+<center>
+$   \left(\begin{array}{ccccccc}
+1 & \epsilon & \ldots & \epsilon & 1 & \epsilon & \ldots \\
+\epsilon & 1 & \ldots & \epsilon & \epsilon & 1 & \ldots \\
+\vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots \\
+\epsilon & \epsilon & \ldots & 1 & \epsilon & \epsilon & \ldots
+\end{array}\right)$
+</center>
+	</ul>
+	<aside class="notes">
+	 <ul>
+	 <li>Rank 1 constraint SCM</li>
+	 <li>This init was chosen because it is the one that produces the best results for FastMNMF</li>
+	</aside>
+ </section>
+ <section>
+	<h1>SDR performance through the number of NMF basis $K$</h1>
+	<img src="figures/Init_REVERBC.png" alt="" style="margin-left:auto; margin-right:auto; display:block" width=65%>
+	<ul>
+		<li>$M=8$ and best hyperparameters for all methods</li>
+		<li>NIG-FastMNMF seems better for a small $K$ compare to $\nu$-FastMNMF</li>
+	</ul>
+
+	<aside class="notes">
+	 <ul>
+	 <li>Some instabilities when $\alpha$ becomes small because of a sampling containing a wide range value (more MH could solve this issue)</li>
+	</aside>
+ </section>
+
+ <section>
+	 <h1>PESQ results for different settings</h1>
+	 <img src="figures/PESQ_results.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:1em" width=100%>
+	 <ul>
+		<li>NMF basis number selected from previous SDR results</li>
+		 <li>NIG is not always the best PESQ</li>
+		 <li>The Modifed Bessel function computation for $\tilde{\phi}_{ft}$ could induces outliers</li>
+
+
+	 </ul>
+	 <aside class="notes">
+ 	 <ul>
+	 <li></li>
+		<li></li>
+	</ul>
+</aside>
+ </section>
+
+ <section>
+	<h1>Speed Results on GPU/CPU</h1>
+	<img src="figures/speed_results.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:1em" width=60%>
+	<ul>
+			 <li>GPU: NVIDIA® TITAN RTX™</li>
+			 <li>CPU: Intel® Xeon® W-2145 CPU @ 3.70GHz</li>
+	 <li>NIG is the slowest</li>
+		<li>the computation of the Modified Bessel function under scipy is slow</li>
+	</ul>
+	<aside class="notes">
+		<ul>
+	<li></li>
+	 <li></li>
+ </ul>
+</aside>
+ </section>
+
+ <section>
+<h1>Settings for Speaker Separation</h1>
+<h2>Dataset description</h2>
+<ul>
+<li>spatialized WSJ0-2,3mix dataset sampled at $16~$kHz recorded with $8$ microphones</li>
+	<li>RT$_{60}$ ranging from $0.2s$ to $0.6s$</li>
+<li>$N=2$ or $N=3$ speakers and $M=N,5,8$ (determined/overdetermined case)</li>
+<li>$100$ utterances for the first experiment (dev set)</li>
+	<li>$200$ utterances for the second experiment (test set)</li>
+<h2>Scores</h2>
+<li>Signal to Distorsion Ratio (SDR), Signal to Artifiact Ratio (PESQ) and Signal to Inference Ratio (SIR)<b>(higher is better)</b></li>
+	</ul>
+</section>
+<section>
+	<h1>SDR performance through number of NMF basis $K$</h1>
+	<img src="figures/Init_wsj0.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:1em" width=100%>
+	<ul>
+	 <li>NIG outperforms other methods for $K=8$</li>
+		<li>$\beta$-FastMNMF is also performant for a small number $K$</li>
+		<li>$\beta$-FastMNMF seems to be more performant for $3$ speakers</li>
+
+
+	</ul>
+	<aside class="notes">
+	<ul>
+	<li></li>
+	 <li></li>
+ </ul>
+</aside>
+</section>
+
+<!-- <section>
+	<h1>Bayesian Information Criterion (BIC)</h1>
+	<img src="figures/ll_wsj0.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:1em" width=65%>
+	<ul>
+	 <li>NIG-FastMNMF as the best BIC</li>
+	 <li>Fits well with the additive model </li>
+
+
+
+	</ul>
+	<aside class="notes">
+	<ul>
+	<li></li>
+	 <li></li>
+ </ul>
+</aside>
+</section> -->
+
+
+<section>
+	<h1>SDR,SAR,SIR performances</h1>
+	<img src="figures/over_results.png" alt="" style="margin-left:auto; margin-right:auto; display:block; margin-top:1em" width=65%>
+	<ul>
+	 <li>NIG-FastMNMF SAR performance may due to modified Bessel function calculation</li>
+		<li>The best SDR is globally got by NIG-FastMNMF</li>
+		<li>Surprisely, the best SAR is in general for $\nu$-FastMNMF</li>
+
+
+	</ul>
+	<aside class="notes">
+	<ul>
+	<li></li>
+	 <li></li>
+ </ul>
+</aside>
+</section>
+
+<section>
+<h1 style="margin-top:-0.8em">2 speakers audio demonstration (anechoic)</h1>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="Mix">
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp2 speakers Mix<br>
+</label>
+<audio id="Mix" controls>
+<source
+		type="audio/mpeg"
+		src="multimedia/2speakers_data/mix.wav"/>
+	</audio>
+</div>
+<div class="col">
+	<label for="clean1">
+			&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspClean Speech 1<br>
+	</label>
+		<audio id="clean1" controls>
+		<source
+				type="audio/mpeg"
+				src="multimedia/2speakers_data/s1.wav"/>
+			</audio>
+		</div>
+		<div class="col">
+			<label for="clean2">
+					&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspClean Speech 2<br>
+			</label>
+				<audio id="clean2" controls>
+				<source
+						type="audio/mpeg"
+						src="multimedia/2speakers_data/s2.wav"/>
+					</audio>
+				</div>
+</div>
+<h2 style="margin-top:-0.3em">$\mathcal{N}$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="gaussian_2sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="gaussian_2sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/Gaussian1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="gaussian_2sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="gaussian_2sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/Gaussian2.wav"/>
+				</audio>
+	</div>
+
+</div>
+<h2 style="margin-top:-0.3em">$\nu$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="t_2sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="t_2sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/Student1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="t_2sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="t_2sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/Student2.wav"/>
+				</audio>
+	</div>
+</div>
+<h2 style="margin-top:-0.3em">$\beta$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="GGD_2sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="GGD_2sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/GGD1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="GGD_2sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="GGD_2sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/GGD2.wav"/>
+				</audio>
+	</div>
+
+</div>
+<h2 style="margin-top:-0.3em">NIG-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="NIG_2sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="NIG_2sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/NIG1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="NIG_2sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="NIG_2sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/2speakers_data/NIG2.wav"/>
+				</audio>
+	</div>
+
+</div>
+		<aside class="notes">
+  	 <ul>
+ 	 <li> As a reminder, ILRMA is only determined</li>
+ 		<li>more background noise</li>
+		<li>close to no noise for the bus alpha. just remains a bit of noise in the high frequency</li>
+ 	</ul>
+ </aside>
+</section>
+
+
+<!-- second demo -->
+<section>
+<h1 style="margin-top:-0.8em">3 speakers audio demonstration</h1>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="Mix">
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp3 speakers Mix<br>
+</label>
+<audio id="Mix" controls>
+<source
+		type="audio/mpeg"
+		src="multimedia/3speakers_data/mix.wav"/>
+	</audio>
+</div>
+<div class="col">
+	<label for="clean1">
+			&nbsp&nbsp&nbsp&nbsp&nbsp&nbspClean Speech 1<br>
+	</label>
+		<audio id="clean1" controls>
+		<source
+				type="audio/mpeg"
+				src="multimedia/3speakers_data/s1.wav"/>
+			</audio>
+		</div>
+		<div class="col">
+			<label for="clean2">
+					&nbsp&nbsp&nbsp&nbsp&nbsp&nbspClean Speech 2<br>
+			</label>
+				<audio id="clean2" controls>
+				<source
+						type="audio/mpeg"
+						src="multimedia/3speakers_data/s2.wav"/>
+					</audio>
+				</div>
+				<div class="col">
+					<label for="clean3">
+							&nbsp&nbsp&nbsp&nbsp&nbsp&nbspClean Speech 3<br>
+					</label>
+						<audio id="clean3" controls>
+						<source
+								type="audio/mpeg"
+								src="multimedia/3speakers_data/s3.wav"/>
+							</audio>
+						</div>
+</div>
+<h2 style="margin-top:-0.3em">$\mathcal{N}$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="gaussian_3sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="gaussian_3sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Gaussian1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="gaussian_3sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="gaussian_3sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Gaussian2.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="gaussian_3sp3">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 3<br>
+		</label>
+			<audio id="gaussian_3sp3" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Gaussian3.wav"/>
+				</audio>
+	</div>
+
+</div>
+<h2 style="margin-top:-0.3em">$\nu$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="t_2sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="t_3sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Student1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="t_3sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="t_3sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Student2.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="t_3sp3">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 3<br>
+		</label>
+			<audio id="t_3sp3" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/Student3.wav"/>
+				</audio>
+	</div>
+</div>
+<h2 style="margin-top:-0.3em">$\beta$-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="GGD_3sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="GGD_3sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/GGD1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="GGD_3sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="GGD_3sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/GGD2.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="GGD_3sp3">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 3<br>
+		</label>
+			<audio id="GGD_3sp3" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/GGD3.wav"/>
+				</audio>
+	</div>
+
+</div>
+<h2 style="margin-top:-0.3em">NIG-FastMNMF</h2>
+<div class="multiCol" style="margin-top:-0.8em">
+	<div class="col">
+		<label for="NIG_3sp1">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 1<br>
+		</label>
+			<audio id="NIG_3sp1" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/NIG1.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="NIG_3sp2">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 2<br>
+		</label>
+			<audio id="NIG_3sp2" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/NIG2.wav"/>
+				</audio>
+	</div>
+	<div class="col">
+		<label for="NIG_3sp3">
+		&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbsp&nbsp	&nbsp&nbspSpeaker 3<br>
+		</label>
+			<audio id="NIG_3sp3" controls>
+			<source
+					type="audio/mpeg"
+					src="multimedia/3speakers_data/NIG3.wav"/>
+				</audio>
+	</div>
+
+</div>
+		<aside class="notes">
+  	 <ul>
+ 	 <li> As a reminder, ILRMA is only determined</li>
+ 		<li>more background noise</li>
+		<li>close to no noise for the bus alpha. just remains a bit of noise in the high frequency</li>
+ 	</ul>
+ </aside>
+</section>
+
+
+
+
+<!-- alpha-stable Theory -->
+<section class="cover" data-background="figures/background.jpg" data-state="no-title-footer no-progressbar has-dark-background">
+	<h2 id='coverh2'>V - Conclusion and Future works</h2>
+</section>
+<section>
+<h1>Conclusion & Future Works</h1>
+<h2>Conclusion</h2>
+<ul>
+<li>Extension of Gaussian FastMNMF to GSM-FastMNMF</li>
+<li>Outperforms the state-of-the-art given the good set of parameters</li>
+<li>Easy to implement
+</ul>
+<h2>Future works</h2>
+<ul>
+<li>Improve NIG by smoothing the parameters</li>
+<li>Replace the NMF model by a deep speech prior using variational autoencoder</li>
+<li>extend to a wider family: exponential family or generalized gaussian scalar mixture</li>
+</ul>
+	<div class="references" style="float:left; margin-top:0.1em">
+<ul><li>M. Fontaine, K. Sekiguchi, A.A. Nugraha, Y. Bando, K. Yoshii. Robust Fast Multichannel Nonnegative Matrix Factorization Based on Gaussian Scale Mixture Representation for Blind Source Separation. IEEE Transactions on audio, Speech and Language Processing (TASLP), 2021 (Submitted)
+</ul></li>
+</div>
+<aside class="notes">
+ <ul>
+<li> multi alpha: different dynamic for each source</li>
+<li>using the so-called covariation, a generalization of the covariance to develop a update parameter directly in the alpha stable representation</li>
+<li>in Gaussian case, a local gaussian model (TF bin and independent where the variance represents the PSD) is derived
+	from the assumption in the time domain of a WSS-GP (stationnary). The extension in alpha-stable is alpha-harmonizable process in the time domain
+</li>
+</ul>
+</aside>
+</section>
+
+<section>
+<div class="affirmation" style="margin-top:5em;"> Thank you for your attention ! Questions ?</div>
+</section>
+	</div>
+
+
+
+<div class='footer'>
+	<img src="css/theme/img/inria-bottom.svg" alt="Logo" />
+	<div id="middlebox">FastMNMF with Gaussian scale mixture model</div>
+	<ul>
+	</ul>
+</div>
+			</div>
+
+		</div>
+
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				controls: false,
+				progress: true,
+				history: true,
+				center: false,
+				slideNumber: true,
+				minScale: 0.1,
+				maxScale: 5,
+				transition: 'none', //
+
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/math-katex/math-katex.js', async: true },
+					{ src: 'plugin/reveald3/reveald3.js' },
+					{ src: 'plugin/highlight/highlight.js', async: true }
+				]
+			});
+		</script>
+	</body>
+</html>
